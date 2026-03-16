@@ -1,25 +1,29 @@
 #!/usr/bin/env bash
-# Create and push a release tag.
-# Usage: scripts/release <version>
-# Example: scripts/release v1.2
+# Create and push a release tag for the version in the VERSION file.
+# Usage: scripts/release [-y]
 set -euo pipefail
 
-if [[ $# -ne 1 ]]; then
-    echo "Usage: scripts/release <version>" >&2
-    echo "Example: scripts/release v1.2" >&2
+YES=false
+while [[ $# -gt 0 ]]; do
+    case "$1" in
+        -y|--yes) YES=true; shift ;;
+        *) echo "Usage: scripts/release [-y|--yes]" >&2; exit 1 ;;
+    esac
+done
+
+REPO_ROOT="$(git rev-parse --show-toplevel)"
+VERSION_FILE="$REPO_ROOT/VERSION"
+
+if [[ ! -f "$VERSION_FILE" ]]; then
+    echo "Error: VERSION file not found at $VERSION_FILE" >&2
     exit 1
 fi
 
-VERSION="$1"
-
-# Normalise: accept both "1.2" and "v1.2"
-if [[ "$VERSION" != v* ]]; then
-    VERSION="v${VERSION}"
-fi
+VERSION="$(cat "$VERSION_FILE" | tr -d '[:space:]')"
 
 # Validate vMAJOR.PATCH
 if ! [[ "$VERSION" =~ ^v[0-9]+\.[0-9]+$ ]]; then
-    echo "Error: version must be in the form vMAJOR.PATCH (e.g. v1.2)" >&2
+    echo "Error: VERSION file contains invalid version '$VERSION' (expected vMAJOR.PATCH)" >&2
     exit 1
 fi
 
@@ -27,6 +31,23 @@ fi
 if ! git diff --quiet || ! git diff --cached --quiet; then
     echo "Error: working tree is not clean — commit or stash changes first." >&2
     exit 1
+fi
+
+echo "Fetching tags ..."
+git fetch --tags
+
+# Verify the tag doesn't already exist
+if git tag | grep -qx "$VERSION"; then
+    echo "Error: tag $VERSION already exists." >&2
+    exit 1
+fi
+
+if [[ "$YES" != true ]]; then
+    read -r -p "Release $VERSION? [y/N] " confirm
+    if [[ "$confirm" != [yY] ]]; then
+        echo "Aborted." >&2
+        exit 1
+    fi
 fi
 
 echo "Tagging $VERSION ..."
