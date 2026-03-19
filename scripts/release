@@ -54,6 +54,17 @@ echo "Tagging $VERSION ..."
 git tag -a "$VERSION" -m "Release $VERSION"
 
 MAJOR=$(echo "$VERSION" | grep -oE '^v[0-9]+')
+PATCH=$(echo "$VERSION" | grep -oE '[0-9]+$')
+RELEASE_BRANCH="release-$MAJOR"
+
+# For minor patches, must already be on the release branch
+if [[ "$PATCH" -gt 0 ]]; then
+    CURRENT_BRANCH="$(git rev-parse --abbrev-ref HEAD)"
+    if [[ "$CURRENT_BRANCH" != "$RELEASE_BRANCH" ]]; then
+        echo "Error: minor patch releases must be made from $RELEASE_BRANCH (currently on $CURRENT_BRANCH)." >&2
+        exit 1
+    fi
+fi
 
 echo "Pushing $VERSION ..."
 git push origin "$VERSION"
@@ -62,8 +73,12 @@ echo "Updating floating major tag $MAJOR ..."
 git tag -f "$MAJOR"
 git push origin "$MAJOR" --force
 
-RELEASE_BRANCH="release-$MAJOR"
-echo "Updating release branch $RELEASE_BRANCH ..."
-git push origin "HEAD:refs/heads/$RELEASE_BRANCH" --force
+# Create release branch only if it doesn't exist
+if git ls-remote --exit-code origin "refs/heads/$RELEASE_BRANCH" &>/dev/null; then
+    echo "Release branch $RELEASE_BRANCH already exists, skipping."
+else
+    echo "Creating release branch $RELEASE_BRANCH ..."
+    git push origin "HEAD:refs/heads/$RELEASE_BRANCH"
+fi
 
 echo "Done. GitHub Actions will create the release from the tag."
