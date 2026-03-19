@@ -37,26 +37,7 @@ jobs:
         env:
           GH_TOKEN: ${{ github.token }}
           TAG: ${{ steps.tag.outputs.name }}
-          REPO: ${{ github.repository }}
         run: |
-          release_id=$(curl -sf \
-            -X POST \
-            -H "Authorization: Bearer $GH_TOKEN" \
-            -H "Accept: application/vnd.github+json" \
-            "https://api.github.com/repos/${REPO}/releases" \
-            -d "$(python3 -c "
-          import json, sys
-          print(json.dumps({
-              'tag_name': sys.argv[1],
-              'name': sys.argv[1],
-              'generate_release_notes': True,
-          }))
-          " "$TAG")" | python3 -c "import sys,json; print(json.load(sys.stdin)['id'])")
-
-          curl -sf \
-            -X POST \
-            -H "Authorization: Bearer $GH_TOKEN" \
-            -H "Accept: application/vnd.github+json" \
-            -H "Content-Type: application/zip" \
-            "https://uploads.github.com/repos/${REPO}/releases/${release_id}/assets?name=release.zip" \
-            --data-binary @dist/release.zip
+          gh release create "$TAG" dist/release.zip \
+            --title "$TAG" \
+            --generate-notes
