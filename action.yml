@@ -1,6 +1,10 @@
 name: Git Submodules Upgrade
 description: Upgrades all git submodules to their latest remote commit and optionally opens a PR.
 
+branding:
+  icon: arrow-up-circle
+  color: blue
+
 inputs:
   target:
     description: Path to the repository root containing submodules.
