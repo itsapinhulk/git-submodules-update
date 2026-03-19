@@ -1,0 +1,32 @@
+#!/usr/bin/env bash
+# Package release artifacts into a zip file.
+# Usage: scripts/package <output-dir>
+set -euo pipefail
+
+if [[ $# -ne 1 ]]; then
+    echo "Usage: scripts/package <output-dir>" >&2
+    exit 1
+fi
+
+OUTPUT_DIR="$1"
+REPO_ROOT="$(git rev-parse --show-toplevel)"
+SCRIPT_SRC="$REPO_ROOT/ext/itsapinhulk/dotfiles/scripts/upgrade-git-submodules"
+
+if [[ ! -f "$SCRIPT_SRC" ]]; then
+    echo "Error: script not found at $SCRIPT_SRC — ensure submodules are initialized." >&2
+    exit 1
+fi
+
+mkdir -p "$OUTPUT_DIR"
+
+STAGING=$(mktemp -d)
+trap 'rm -rf "$STAGING"' EXIT
+
+cp "$REPO_ROOT/action.yml" "$STAGING/"
+mkdir -p "$STAGING/ext/itsapinhulk/dotfiles/scripts"
+cp "$SCRIPT_SRC" "$STAGING/ext/itsapinhulk/dotfiles/scripts/upgrade-git-submodules"
+
+ZIP="$OUTPUT_DIR/release.zip"
+(cd "$STAGING" && zip -r "$ZIP" .)
+
+echo "Packaged: $ZIP"

@@ -45,7 +45,10 @@ runs:
     - name: Checkout submodules
       shell: bash
       working-directory: ${{ github.action_path }}
-      run: git submodule update --init --depth 1
+      run: |
+        if [[ -f .gitmodules ]]; then
+          git submodule update --init --depth 1
+        fi
 
     - name: Configure git
       shell: bash
