@@ -62,4 +62,8 @@ echo "Updating floating major tag $MAJOR ..."
 git tag -f "$MAJOR"
 git push origin "$MAJOR" --force
 
+RELEASE_BRANCH="release-$MAJOR"
+echo "Updating release branch $RELEASE_BRANCH ..."
+git push origin "HEAD:refs/heads/$RELEASE_BRANCH" --force
+
 echo "Done. GitHub Actions will create the release from the tag."
