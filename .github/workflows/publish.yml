@@ -16,6 +16,11 @@ jobs:
     runs-on: ubuntu-latest
     if: ${{ github.event_name == 'push' || github.event.workflow_run.conclusion == 'success' }}
     steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+        with:
+          submodules: true
+
       - name: Resolve tag
         id: tag
         run: |
@@ -24,11 +29,6 @@ jobs:
           else
             echo "name=${{ github.ref_name }}" >> "$GITHUB_OUTPUT"
           fi
-
-      - name: Checkout
-        uses: actions/checkout@v4
-        with:
-          submodules: true
 
       - name: Package artifacts
         run: bash scripts/package dist
