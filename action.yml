@@ -55,10 +55,12 @@ runs:
   steps:
     - name: Checkout submodules
       shell: bash
-      working-directory: ${{ github.action_path }}
       run: |
-        if [[ -f .gitmodules ]]; then
-          git submodule update --init --depth 1
+        script="${{ github.action_path }}/ext/itsapinhulk/dotfiles/scripts/upgrade-git-submodules"
+        if [[ ! -f "$script" ]]; then
+          git -C "${{ github.action_path }}" submodule update --init --depth 1 2>/dev/null || \
+            git clone --depth 1 https://github.com/itsapinhulk/dotfiles.git \
+              "${{ github.action_path }}/ext/itsapinhulk/dotfiles"
         fi
 
     - name: Configure git
